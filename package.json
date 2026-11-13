@@ -1,0 +1,10 @@
+{
+  "name": "clinica-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "clinica-api",
+    "clinica-frontend",
+    "shared"
+  ]
+}
