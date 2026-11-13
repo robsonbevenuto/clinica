@@ -1,9 +1,9 @@
 # Sistema de Clínica Médica
 
-**Link do vídeo:** [COLE O LINK DO SEU VÍDEO AQUI QUANDO GRAVAR]
+**Link do vídeo:**https://drive.google.com/drive/folders/1WKumN4q6i6yxxQjrbWdzxNk2qUnlQmPl?usp=sharing
 
 ## Integrantes
-* **Nome:** [Seu Nome Completo] | **RGM:** [Seu RGM] - Responsável pelo Backend, Banco de Dados e Frontend.
+* **Nome:** Robson Bevenuto da Silva | **RGM:** 45723133 - Responsável pelo Backend, Banco de Dados e Frontend.
 
 ## Tema e Tabelas
 O sistema é um gerenciador de clínica médica. As tabelas do banco de dados são:
