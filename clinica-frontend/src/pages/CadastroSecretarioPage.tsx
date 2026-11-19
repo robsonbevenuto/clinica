@@ -1,25 +1,23 @@
 import { useState } from "react";
 import { TextInput, Button, Alert, Title, Container, Stack } from "@mantine/core";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
+import { cadastrarUsuario } from "../services/api"; // Usando o Axios que criamos
 
 export function CadastroSecretarioPage() {
   const navigate = useNavigate();
   
-  // Estados do formulário
+  // Estados do formulário (removemos cpf e telefone pois não existem no banco)
   const [nome, setNome] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [telefone, setTelefone] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   
   // Estados de erro
   const [erroNome, setErroNome] = useState("");
-  const [erroCpf, setErroCpf] = useState("");
-  const [erroTelefone, setErroTelefone] = useState("");
   const [erroEmail, setErroEmail] = useState("");
   const [erroSenha, setErroSenha] = useState("");
   const [erroGeral, setErroGeral] = useState("");
   const [sucesso, setSucesso] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
   async function cadastrar(e: React.FormEvent) {
     e.preventDefault();
@@ -27,21 +25,13 @@ export function CadastroSecretarioPage() {
     setSucesso("");
     
     // 1. Limpar erros antigos
-    setErroNome(""); setErroCpf(""); setErroTelefone(""); setErroEmail(""); setErroSenha("");
+    setErroNome(""); setErroEmail(""); setErroSenha("");
 
     let temErro = false;
 
     // 2. Validações na mão
     if (nome.trim().length < 3) {
       setErroNome("O nome deve ter pelo menos 3 letras.");
-      temErro = true;
-    }
-    if (cpf.trim().length < 11) {
-      setErroCpf("O CPF deve ter 11 dígitos.");
-      temErro = true;
-    }
-    if (telefone.trim().length < 10) {
-      setErroTelefone("Telefone inválido.");
       temErro = true;
     }
     if (!email.includes("@")) {
@@ -53,26 +43,21 @@ export function CadastroSecretarioPage() {
       temErro = true;
     }
 
-    // Se tiver algum erro, para aqui e não chama a API
     if (temErro) return; 
 
-    // 3. Se passou em tudo, chama a API usando fetch
+    // 3. Chama a API (Axios)
+    setCarregando(true);
     try {
-      const res = await fetch("http://127.0.0.1:3000/secretarios", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome, cpf, telefone, email, senha }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Erro ao cadastrar secretário.");
-      }
-
+      await cadastrarUsuario({ nome, email, senha });
       setSucesso("Secretário cadastrado com sucesso!");
       setTimeout(() => navigate("/home"), 2000); 
-    } catch (error) {
-      // CORREÇÃO AQUI: Removemos o ': any' e tratamos o erro com segurança
-      setErroGeral(error instanceof Error ? error.message : "Erro ao cadastrar secretário.");
+    } catch (error: any) {
+      // Mostra o erro real da API
+      const msg = error.response?.data?.error || "Erro ao cadastrar secretário.";
+      const detalhes = error.response?.data?.detalhes?.[0]?.mensagem;
+      setErroGeral(detalhes || msg);
+    } finally {
+      setCarregando(false);
     }
   }
 
@@ -92,18 +77,6 @@ export function CadastroSecretarioPage() {
             error={erroNome} 
           />
           <TextInput 
-            label="CPF" 
-            value={cpf} 
-            onChange={(e) => setCpf(e.target.value)} 
-            error={erroCpf} 
-          />
-          <TextInput 
-            label="Telefone" 
-            value={telefone} 
-            onChange={(e) => setTelefone(e.target.value)} 
-            error={erroTelefone} 
-          />
-          <TextInput 
             label="E-mail" 
             type="email" 
             value={email} 
@@ -117,9 +90,17 @@ export function CadastroSecretarioPage() {
             onChange={(e) => setSenha(e.target.value)} 
             error={erroSenha} 
           />
-          <Button type="submit" fullWidth>Cadastrar</Button>
+          <Button type="submit" fullWidth loading={carregando}>
+            Cadastrar
+          </Button>
         </Stack>
       </form>
+
+      <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13 }}>
+        <Link to="/" style={{ color: '#008080', textDecoration: 'none', fontWeight: 600 }}>
+          Voltar para o Login
+        </Link>
+      </div>
     </Container>
   );
 }
