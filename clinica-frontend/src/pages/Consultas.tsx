@@ -38,10 +38,13 @@ export default function Consultas() {
     }
 
     try {
+      // AQUI ESTÁ A CORREÇÃO: Converte para UTC só na hora de enviar
+      const dataIso = new Date(form.data).toISOString();
+
       const payload = {
         pacienteId: Number(form.pacienteId),
         medicoId: Number(form.medicoId),
-        data: form.data,
+        data: dataIso,
         turno: form.turno,
         observacoes: form.observacoes
       }
@@ -66,7 +69,6 @@ export default function Consultas() {
         await deleteConsulta(id)
         carregarDados()
       } catch (error) {
-        // Usando o console.error para remover o aviso de variável não usada
         console.error("Erro ao deletar", error)
         alert('Não foi possível deletar.');
       }
@@ -146,15 +148,12 @@ export default function Consultas() {
             onChange={(e) => setForm({ ...form, medicoId: e.currentTarget.value })}
           />
 
+          {/* AQUI ESTÁ A CORREÇÃO DO RELÓGIO */}
           <TextInput
             label="Data e Hora"
             type="datetime-local"
-            value={form.data ? form.data.slice(0, 16) : ''}
-            onChange={(e) => {
-              const dataDigitada = e.currentTarget.value;
-              const dataIso = dataDigitada ? new Date(dataDigitada).toISOString() : '';
-              setForm({ ...form, data: dataIso });
-            }}
+            value={form.data}
+            onChange={(e) => setForm({ ...form, data: e.currentTarget.value })}
           />
 
           <NativeSelect

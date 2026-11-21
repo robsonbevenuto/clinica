@@ -6,20 +6,30 @@ import { getConsultas, getPacientes, getMedicos, createConsulta } from '../servi
 
 interface Paciente { id: number; nome: string }
 interface Medico { id: number; nome: string }
-interface Consulta { id: number; data: string; turno: string; paciente: Paciente; medico: Medico; }
+interface Consulta { 
+  id: number; 
+  data: string; 
+  turno: string; 
+  paciente: Paciente; 
+  medico: Medico; 
+}
 
 export default function Home() {
   const navigate = useNavigate()
+
   const [consultas, setConsultas] = useState<Consulta[]>([])
   const [pacientes, setPacientes] = useState<Paciente[]>([])
   const [medicos, setMedicos] = useState<Medico[]>([])
+  
   const [modalAberto, setModalAberto] = useState(false)
   const [form, setForm] = useState({ pacienteId: '', medicoId: '', data: '', turno: 'M', observacoes: '' })
 
   const carregarDados = useCallback(async () => {
     try {
       const [dadosConsultas, dadosPacientes, dadosMedicos] = await Promise.all([
-        getConsultas(), getPacientes(), getMedicos()
+        getConsultas(),
+        getPacientes(),
+        getMedicos()
       ])
       setConsultas(dadosConsultas)
       setPacientes(dadosPacientes)
@@ -29,40 +39,39 @@ export default function Home() {
     }
   }, [])
 
-  useEffect(() => { carregarDados() }, [carregarDados])
+  useEffect(() => {
+    carregarDados()
+  }, [carregarDados])
 
   const salvarConsulta = async () => {
-    console.log("1. O botão Salvar foi clicado!");
-    
-    if (!form.data || form.data === '') {
-      alert("ERRO: Você precisa selecionar a Data e Hora!");
+    if (!form.pacienteId || !form.medicoId || !form.data) {
+      alert("ERRO: Preencha o Paciente, o Médico e a Data.");
       return;
     }
 
-    const payload = {
-      pacienteId: Number(form.pacienteId),
-      medicoId: Number(form.medicoId),
-      data: form.data,
-      turno: form.turno || 'M',
-      observacoes: form.observacoes || ''
-    };
-
-    console.log("2. Enviando para a API:", payload);
-
     try {
-      await createConsulta(payload);
-      console.log("3. SUCESSO! A API salvou.");
+      // AQUI ESTÁ A CORREÇÃO: Converte para UTC só na hora de enviar
+      const dataIso = new Date(form.data).toISOString();
+
+      const payload = {
+        pacienteId: Number(form.pacienteId),
+        medicoId: Number(form.medicoId),
+        data: dataIso, 
+        turno: form.turno,
+        observacoes: form.observacoes
+      }
+      
+      await createConsulta(payload)
+      setModalAberto(false)
+      setForm({ pacienteId: '', medicoId: '', data: '', turno: 'M', observacoes: '' })
+      carregarDados()
       alert("Consulta salva com sucesso!");
-      setModalAberto(false);
-      setForm({ pacienteId: '', medicoId: '', data: '', turno: 'M', observacoes: '' });
-      carregarDados();
     } catch (error: unknown) {
-      console.error("4. ERRO NA API:", error);
-      // Correção do erro 'any' para o VS Code ficar limpo
       const err = error as { response?: { data?: { error?: string; detalhes?: { mensagem: string }[] } } };
       const detalhes = err.response?.data?.detalhes?.[0]?.mensagem;
-      const msg = err.response?.data?.error || "Erro de rede (API caiu?)";
+      const msg = err.response?.data?.error || "Erro de rede";
       alert(`FALHOU: ${detalhes || msg}`);
+      console.error(error);
     }
   }
 
@@ -87,6 +96,7 @@ export default function Home() {
       </nav>
 
       <div style={{ padding: '32px 28px' }}>
+        
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 600, color: '#008080', margin: 0 }}>Sistema de Gestão Médica</h1>
@@ -135,7 +145,7 @@ export default function Home() {
                   <Table.Td>{c.paciente?.nome || 'N/A'}</Table.Td>
                   <Table.Td>{c.medico?.nome || 'N/A'}</Table.Td>
                   <Table.Td>{new Date(c.data).toLocaleDateString('pt-BR')}</Table.Td>
-                  <Table.Td>{c.turno === 'M' ? 'Manhã' : c.turno === 'T' ? 'Tarde' : 'Não definido'}</Table.Td>
+                  <Table.Td>{c.turno === 'M' ? 'Manhã' : 'Tarde'}</Table.Td>
                 </Table.Tr>
               ))}
             </Table.Tbody>
@@ -160,15 +170,12 @@ export default function Home() {
             onChange={(e) => setForm({ ...form, medicoId: e.currentTarget.value })}
           />
 
+          {/* AQUI ESTÁ A CORREÇÃO DO RELÓGIO */}
           <TextInput
             label="Data e Hora"
             type="datetime-local"
-            value={form.data ? form.data.slice(0, 16) : ''}
-            onChange={(e) => {
-              const dataDigitada = e.currentTarget.value;
-              const dataIso = dataDigitada ? new Date(dataDigitada).toISOString() : '';
-              setForm({ ...form, data: dataIso });
-            }}
+            value={form.data}
+            onChange={(e) => setForm({ ...form, data: e.currentTarget.value })}
           />
 
           <NativeSelect
